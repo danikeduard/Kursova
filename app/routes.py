@@ -4,6 +4,7 @@ import uuid
 from flask import Blueprint, current_app, jsonify, render_template, request, session
 
 from .services.prompts import build_system_prompt
+from .services.store import DatabaseUnavailableError
 
 bp = Blueprint("main", __name__)
 log = logging.getLogger(__name__)
@@ -23,7 +24,10 @@ def index():
 @bp.post("/reset")
 def reset():
     level = (request.get_json(silent=True) or {}).get("level", "beginner")
-    current_app.extensions["store"].reset(_sid(), level)
+    try:
+        current_app.extensions["store"].reset(_sid(), level)
+    except DatabaseUnavailableError as exc:
+        return jsonify({"error": str(exc)}), 503
     return jsonify({"ok": True})
 
 
@@ -35,7 +39,10 @@ def chat():
         return jsonify({"reply": "Порожнє повідомлення."}), 400
 
     llm = current_app.extensions["llm"]
-    conv = current_app.extensions["store"].get(_sid())
+    try:
+        conv = current_app.extensions["store"].get(_sid())
+    except DatabaseUnavailableError as exc:
+        return jsonify({"reply": str(exc)}), 503
     limit = current_app.config["HISTORY_LIMIT"]
 
     is_analysis = user_msg.lower().startswith("/analysis")
@@ -63,5 +70,9 @@ def chat():
 
     if not is_analysis:
         conv.history.append({"role": "assistant", "content": reply})
+        try:
+            current_app.extensions["store"].save(_sid(), conv)
+        except DatabaseUnavailableError as exc:
+            return jsonify({"reply": str(exc)}), 503
 
     return jsonify({"reply": reply, "level": level})

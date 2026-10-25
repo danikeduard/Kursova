@@ -14,7 +14,7 @@ def create_app() -> Flask:
         api_key=app.config["GROQ_API_KEY"],
         model=app.config["GROQ_MODEL"],
     )
-    app.extensions["store"] = SessionStore()
+    app.extensions["store"] = SessionStore(app.config["DATABASE_URL"])
 
     from .routes import bp
 
