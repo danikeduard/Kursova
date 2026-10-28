@@ -5,7 +5,7 @@ class LLMClient:
     """Тонка обгортка над Groq, щоб модель і ключ брались з конфігу."""
 
     def __init__(self, api_key: str | None, model: str):
-        if not api_key or api_key == "your_groq_api_key_here":
+        if not api_key:
             raise RuntimeError("GROQ_API_KEY не задано. Додай його у файл .env")
         self._client = Groq(api_key=api_key)
         self.model = model
