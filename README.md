@@ -1,8 +1,8 @@
 # 🤖 AI English Tutor
 
-Невеликий Flask-чат, який допомагає вчити англійську. Бот працює через Groq,
-підлаштовує складність під користувача (beginner → advanced) і за командою
-`/analysis` робить розбір помилок.
+Невеликий Flask-чат, який допомагає вчити англійську. Єдине постійне сховище —
+Neon PostgreSQL зі схемою `ibot`; Flask-сесія містить тільки UUID студента.
+Профіль CEFR (A1–C2), помилки й історія оцінювання записуються в БД.
 
 ## Запуск
 
@@ -12,7 +12,8 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 cp .env.example .env             # Windows: copy .env.example .env
-# впиши GROQ_API_KEY і DATABASE_URL у .env
+# заповни GROQ_API_KEY, SECRET_KEY і DATABASE_URL у .env
+python -m db.migrate
 python run.py
 ```
 
@@ -26,7 +27,7 @@ python run.py
 | `GROQ_MODEL`   | Мовна модель (напр. `openai/gpt-oss-120b`) |
 | `DATABASE_URL`  | Рядок підключення PostgreSQL              |
 | `SECRET_KEY`    | Секрет для Flask-сесій                    |
-| `HISTORY_LIMIT`| Скільки останніх повідомлень йде в модель  |
+| `STORE_MESSAGE_TEXT` | `0` — не зберігати тексти повідомлень (типово) |
 | `FLASK_DEBUG`  | `1` — режим розробки                       |
 | `PORT`         | Порт сервера                               |
 
@@ -47,10 +48,8 @@ app/
 └── static/{css,js}
 ```
 
-Під час запуску застосунок автоматично створює таблицю `conversations`.
-Якщо PostgreSQL недоступний, запити `/chat` і `/reset` повертають `503`
-з повідомленням про проблему з підключенням, а технічні деталі записуються
-в журнал сервера.
+Застосунок не створює таблиці автоматично. Якщо Neon недоступний або міграція
+не виконана, він повідомляє про проблему підключення.
 
 ## Open WebUI iBot filter
 
@@ -62,7 +61,8 @@ in PostgreSQL under `ibot`; the filter never creates or modifies tables.
 
 In Open WebUI, open **Admin Panel -> Functions -> Add Function**, paste
 `ibot_filter.py`, save and enable it. Apply it to the iBot model, or enable it
-globally. Open WebUI installs `psycopg2-binary` from the function frontmatter.
+globally. Open WebUI installs `psycopg[binary]` and `psycopg_pool` from the function
+frontmatter.
 
 Set these Valve values (or environment variables where noted):
 

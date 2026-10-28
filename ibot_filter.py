@@ -1,7 +1,7 @@
 """
 title: iBot English Level Analyzer
 description: Background CEFR tracking and learner-profile injection for iBot.
-requirements: psycopg2-binary
+requirements: psycopg[binary], psycopg_pool
 version: 1.0.0
 """
 
@@ -21,12 +21,15 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Optional
 from urllib import request as urllib_request
 
-try:
-    import psycopg2
-    from psycopg2 import extras
-except ImportError:  # Allows pure math tests before Open WebUI installs requirements.
-    psycopg2 = None
-    extras = None
+from psycopg_pool import ConnectionPool
+from psycopg.types.json import Json
+
+from app.services.levels import (
+    clamp, compute_ttr, cyrillic_ratio, decay_weights, error_weight,
+    extract_json_object, hysteresis_level, kalman_update, level_from_mu,
+    ngram_overlap, obs_fluency, obs_grammar, obs_vocab, reliability,
+    sanitize_analyzer_json,
+)
 
 try:
     from pydantic import BaseModel, Field
@@ -56,157 +59,6 @@ CONFIG = {
 }
 
 
-def clamp(value: float, low: float = 1.0, high: float = 6.0) -> float:
-    return max(low, min(high, float(value)))
-
-
-def compute_ttr(text: str) -> float:
-    tokens = [token.lower() for token in WORD_RE.findall(text)]
-    return len(set(tokens)) / len(tokens) if tokens else 0.0
-
-
-def cyrillic_ratio(text: str) -> float:
-    letters = re.findall(r"[A-Za-z\u0400-\u04ff]", text)
-    return sum(bool(CYRILLIC_RE.fullmatch(char)) for char in letters) / len(letters) if letters else 0.0
-
-
-def ngram_overlap(text: str, previous: str, n: int = 3) -> float:
-    def grams(value: str) -> set[tuple[str, ...]]:
-        words = [word.lower() for word in WORD_RE.findall(value)]
-        return {tuple(words[index:index + n]) for index in range(len(words) - n + 1)}
-    current, old = grams(text), grams(previous)
-    return len(current & old) / len(current) if current else 0.0
-
-
-def reliability(word_count: int) -> float:
-    return min(1.0, max(0, word_count) / 30.0)
-
-
-def kalman_update(mu: float, sigma2: float, observation: float, word_count: int,
-                  task_difficulty: float = 1.0, r0: float = 0.5, q: float = 0.0) -> tuple[float, float]:
-    r_t = reliability(word_count)
-    noise = r0 / (max(r_t, 0.05) * max(0.01, task_difficulty))
-    prior = max(0.0, sigma2) + q
-    gain = prior / (prior + noise)
-    return clamp(mu + gain * (observation - mu)), max(0.0, (1 - gain) * prior)
-
-
-def level_from_mu(mu: float) -> str:
-    return LEVELS[max(0, min(5, int(math.floor(clamp(mu) + 0.5)) - 1))]
-
-
-def hysteresis_level(mu: float, sigma2: float, shown_level: str, msgs_since_change: int,
-                     margin: float = 0.25, max_sigma2: float = 0.5,
-                     required_messages: int = 5) -> tuple[str, int]:
-    current = LEVEL_TO_NUMBER.get(shown_level, 2)
-    candidate = int(math.floor(clamp(mu) + 0.5))
-    beyond = (mu >= current + 0.5 + margin or mu <= current - 0.5 - margin)
-    if candidate != current and beyond and sigma2 < max_sigma2 and msgs_since_change >= required_messages:
-        return LEVELS[candidate - 1], 0
-    return shown_level if shown_level in LEVEL_TO_NUMBER else LEVELS[current - 1], msgs_since_change + 1
-
-
-def error_weight(severity: str, structure_level: int, grammar_mu: float,
-                 category: str, is_typo: bool = False) -> float:
-    if is_typo or (category == "spelling" and severity == "low"):
-        return 0.0
-    severity_factor = {"low": 0.5, "medium": 1.0, "high": 1.5}.get(severity, 1.0)
-    if structure_level > grammar_mu + 0.5:
-        level_factor = 0.3
-    elif structure_level <= grammar_mu:
-        level_factor = 1.0 + 0.25 * (grammar_mu - structure_level)
-    else:
-        level_factor = 1.0
-    return severity_factor * level_factor
-
-
-def decay_weights(weights: Mapping[str, float], decay: float = 0.9) -> dict[str, float]:
-    return {category: float(value) * decay for category, value in weights.items()}
-
-
-def _percentile(values: Iterable[float], percentile: float) -> float:
-    ordered = sorted(values)
-    if not ordered:
-        return 1.0
-    position = (len(ordered) - 1) * percentile
-    lower, upper = math.floor(position), math.ceil(position)
-    return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
-
-
-def obs_grammar(features: Mapping[str, Any], analysis: Mapping[str, Any], error_total: float = 0.0) -> float:
-    structures = [item["level"] for item in analysis.get("structures_correct", [])
-                  if isinstance(item, dict) and isinstance(item.get("level"), (int, float))]
-    base = _percentile(structures, 0.75) if structures else clamp(float(features.get("avg_sentence_len", 1)) / 5 + 1)
-    words = max(1, int(features.get("word_count", 0)))
-    return clamp(base - error_total / words * 100 * 0.02)
-
-
-def obs_vocab(features: Mapping[str, Any], analysis: Mapping[str, Any]) -> float:
-    levels = [LEVEL_TO_NUMBER.get(str(item.get("cefr", "")).upper())
-              for item in analysis.get("words", []) if isinstance(item, dict)]
-    levels = [level for level in levels if level]
-    base = statistics.mean(sorted(levels)[len(levels) // 2:]) if levels else 2.0
-    return clamp(base + (compute_ttr(str(features.get("text", ""))) - 0.5) * 0.6)
-
-
-def obs_fluency(features: Mapping[str, Any], analysis: Mapping[str, Any]) -> float:
-    sentence_length = float(features.get("avg_sentence_len", 0))
-    word_count = int(features.get("word_count", 0))
-    return clamp(1.0 + min(3.0, sentence_length / 6) + min(1.0, word_count / 80))
-
-
-def sanitize_analyzer_json(value: Any) -> Optional[dict[str, Any]]:
-    if isinstance(value, str):
-        try:
-            value = json.loads(value)
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return None
-    if not isinstance(value, dict):
-        return None
-    errors = []
-    for item in value.get("errors", []):
-        if not isinstance(item, dict) or item.get("category") not in {
-            "tense", "article", "preposition", "word_order", "vocabulary",
-            "spelling", "agreement", "punctuation", "other"}:
-            continue
-        errors.append({
-            "category": item["category"], "original": str(item.get("original", ""))[:500],
-            "corrected": str(item.get("corrected", ""))[:500],
-            "severity": item.get("severity") if item.get("severity") in {"low", "medium", "high"} else "medium",
-            "structure_level": max(1, min(6, int(item.get("structure_level", 2)))),
-            "is_typo": bool(item.get("is_typo", False)),
-        })
-    structures = [{"name": str(item.get("name", ""))[:100],
-                   "level": max(1, min(6, int(item.get("level", 2))))}
-                  for item in value.get("structures_correct", []) if isinstance(item, dict)]
-    words = [{"word": str(item.get("word", ""))[:80],
-              "cefr": str(item.get("cefr", "")).upper()}
-             for item in value.get("words", [])[:15]
-             if isinstance(item, dict) and str(item.get("cefr", "")).upper() in LEVEL_TO_NUMBER]
-    difficulty = value.get("task_difficulty", 1.0)
-    estimate = value.get("overall_estimate", 2.0)
-    try:
-        difficulty, estimate = max(0.5, min(1.5, float(difficulty))), max(1, min(6, float(estimate)))
-    except (TypeError, ValueError):
-        return None
-    return {"errors": errors, "structures_correct": structures, "words": words,
-            "topic": str(value.get("topic", ""))[:120], "task_difficulty": difficulty,
-            "overall_estimate": estimate}
-
-
-def extract_json_object(value: str) -> Optional[dict[str, Any]]:
-    """Extract the first valid JSON object from a model response."""
-    decoder = json.JSONDecoder()
-    for match in re.finditer(r"\{", value):
-        try:
-            parsed, _ = decoder.raw_decode(value[match.start():])
-        except json.JSONDecodeError:
-            continue
-        if isinstance(parsed, dict):
-            return parsed
-    return None
-
-
 def _features(text: str, previous_assistant: str = "") -> dict[str, Any]:
     words = WORD_RE.findall(text)
     sentences = [part for part in re.split(r"[.!?]+", text) if part.strip()]
@@ -233,7 +85,8 @@ class Filter:
     class Valves(BaseModel):
         DATABASE_URL: str = Field(default_factory=lambda: os.getenv("DATABASE_URL", ""))
         LLM_BASE_URL: str = "https://api.groq.com/openai/v1"
-        LLM_API_KEY: str = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
+        LLM_API_KEY: str = Field(default_factory=lambda: os.getenv("LLM_API_KEY") or
+                                  os.getenv("OPENAI_API_KEY") or os.getenv("GROQ_API_KEY", ""))
         ANALYZER_MODEL: str = "openai/gpt-oss-120b"
         JUDGE_MODEL: str = "openai/gpt-oss-120b"
         JUDGE_EVERY: int = 5
@@ -249,6 +102,11 @@ class Filter:
     def __init__(self):
         self.valves = self.Valves()
         self.toggle = True
+        self._pool = ConnectionPool(
+            conninfo=self.valves.DATABASE_URL or os.getenv("DATABASE_URL", ""),
+            kwargs={"sslmode": "require", "connect_timeout": 5},
+            min_size=1, max_size=4, open=False,
+        )
         self._executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="ibot-analysis")
         self._state_lock = threading.Lock()
         self._user_locks: dict[str, threading.Lock] = {}
@@ -258,17 +116,19 @@ class Filter:
         with self._state_lock:
             return self._user_locks.setdefault(user_id, threading.Lock())
 
+    def enqueue(self, user_id: str, text: str, previous_assistant: str = "") -> None:
+        self._executor.submit(
+            self._pipeline,
+            _Request(time.monotonic(), user_id, text, previous_assistant, True),
+        )
+
     def _connect(self):
-        if psycopg2 is None:
-            raise RuntimeError("psycopg2 is not installed")
-        last_error: Optional[Exception] = None
-        for _ in range(2):
-            try:
-                return psycopg2.connect(self.valves.DATABASE_URL or os.environ["DATABASE_URL"],
-                                        sslmode="require", connect_timeout=5)
-            except Exception as exc:
-                last_error = exc
-        raise RuntimeError("database connection failed") from last_error
+        if self._pool.closed:
+            self._pool.open()
+        try:
+            return self._pool.getconn()
+        except Exception as exc:
+            raise RuntimeError("database connection failed") from exc
 
     def _query(self, sql: str, params: tuple[Any, ...] = (), fetch: bool = False,
                connection: Any = None) -> list[tuple[Any, ...]]:
@@ -287,7 +147,7 @@ class Filter:
             raise
         finally:
             if owned:
-                conn.close()
+                self._pool.putconn(conn)
 
     def _profile(self, user_id: str) -> str:
         try:
@@ -415,7 +275,7 @@ Schema: {{"errors":[{{"category":"tense|article|preposition|word_order|vocabular
                 log.exception("Background learner analysis failed")
             finally:
                 if conn:
-                    conn.close()
+                    self._pool.putconn(conn)
 
     def _store_message(self, req: _Request, features: dict[str, Any], conn: Any) -> Any:
         return self._query(
@@ -428,8 +288,6 @@ Schema: {{"errors":[{{"category":"tense|article|preposition|word_order|vocabular
 
     def _store_analysis(self, req: _Request, features: dict[str, Any],
                         analysis: dict[str, Any], conn: Any, message_id: Any) -> None:
-        if extras is None:
-            raise RuntimeError("psycopg2 extras unavailable")
         judge = None
         message_count = self._query(
             "SELECT COUNT(*) FROM ibot.messages WHERE learner_id=%s", (req.user_id,), True, conn)[0][0]
@@ -440,7 +298,7 @@ Schema: {{"errors":[{{"category":"tense|article|preposition|word_order|vocabular
                     (learner_id, grammar, vocabulary, fluency, evidence)
                     VALUES (%s,%s,%s,%s,%s)""",
                     (req.user_id, judge["grammar"], judge["vocabulary"], judge["fluency"],
-                     extras.Json(judge["evidence"])), connection=conn)
+                     Json(judge["evidence"])), connection=conn)
         rows = self._query(
             "SELECT skill, mu, sigma2, shown_level, COALESCE(msgs_since_change, 0) FROM ibot.skill_state WHERE learner_id=%s FOR UPDATE",
             (req.user_id,), True, conn)

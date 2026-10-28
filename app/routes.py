@@ -48,15 +48,20 @@ def chat():
     is_analysis = user_msg.lower().startswith("/analysis")
 
     if is_analysis:
-        if not conv.history:
-            return jsonify({"reply": "Поки що немає діалогу для аналізу 🙂 Напиши щось англійською!"})
-        level = conv.state.level
+        report = current_app.extensions["store"].analysis_report(_sid())
+        reply = (
+            f"Поточний рівень: {report['level']}\n"
+            f"Топ категорії помилок: {report['mistakes'] or 'даних ще немає'}\n"
+            f"Останні спостереження: {report['history'][:5] or 'даних ще немає'}"
+        )
+        return jsonify({"reply": reply, "level": report["level"]})
     else:
-        level = conv.state.update(user_msg)
         conv.history.append({"role": "user", "content": user_msg})
 
+    profile = current_app.extensions["store"].profile_prompt(_sid())
+    level = conv.level
     messages = [
-        {"role": "system", "content": build_system_prompt(level, is_analysis)},
+        {"role": "system", "content": build_system_prompt(level, is_analysis, profile)},
         *conv.history[-limit:],
     ]
 
@@ -74,5 +79,8 @@ def chat():
             current_app.extensions["store"].save(_sid(), conv)
         except DatabaseUnavailableError as exc:
             return jsonify({"reply": str(exc)}), 503
+        current_app.extensions["analyzer"].enqueue(
+            _sid(), user_msg, conv.history[-2]["content"] if len(conv.history) > 1 else ""
+        )
 
-    return jsonify({"reply": reply, "level": level})
+    return jsonify({"reply": reply, "level": conv.level})

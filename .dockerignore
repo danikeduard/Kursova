@@ -7,3 +7,4 @@ __pycache__/
 .git/
 .idea/
 .vscode/
+.webui_secret_key

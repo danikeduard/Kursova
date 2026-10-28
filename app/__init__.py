@@ -15,6 +15,8 @@ def create_app() -> Flask:
         model=app.config["GROQ_MODEL"],
     )
     app.extensions["store"] = SessionStore(app.config["DATABASE_URL"])
+    from ibot_filter import Filter
+    app.extensions["analyzer"] = Filter()
 
     from .routes import bp
 

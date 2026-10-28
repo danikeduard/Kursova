@@ -33,7 +33,7 @@ ANALYSIS = (
 )
 
 
-def build_system_prompt(level: str, analysis: bool = False) -> str:
+def build_system_prompt(level: str, analysis: bool = False, profile: str = "") -> str:
     if analysis:
-        return f"{BASE} {EMOJI} {ANALYSIS}"
-    return f"{BASE} {EMOJI} {LEVEL_PROMPTS.get(level, LEVEL_PROMPTS['intermediate'])}"
+        return f"{BASE} {EMOJI} {ANALYSIS} {profile}"
+    return f"{BASE} {EMOJI} {profile or LEVEL_PROMPTS.get(level, LEVEL_PROMPTS['intermediate'])}"
