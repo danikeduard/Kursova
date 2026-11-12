@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Feedback — LinguaPath{% endblock %}
+{% block content %}
+<section class="card"><h1>{{ t("feedback.title") }}</h1><p>{{ t("feedback.description") }}</p>
+<form method="post">
+{% for i in range(1, 11) %}<label>Question {{ i }} <select name="q{{ i }}" required><option value="">Choose</option>{% for n in range(1,6) %}<option value="{{ n }}">{{ n }}</option>{% endfor %}</select></label>{% endfor %}
+<label>Anything else? <textarea name="free_text" maxlength="4000"></textarea></label><button class="button" type="submit">{{ t("feedback.submit") }}</button>
+</form></section>
+{% endblock %}

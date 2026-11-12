@@ -1,0 +1,54 @@
+:root {
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes message-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@keyframes dot-pulse {
+  0%, 60%, 100% { opacity:.35; transform:translateY(0); }
+  30% { opacity:1; transform:translateY(-3px); }
+}
+@keyframes chip-updated { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+@keyframes overlay-in { from { opacity:0; transform:scale(.98); } to { opacity:1; transform:none; } }
+@keyframes backdrop-in { from { opacity:0; } to { opacity:1; } }
+@keyframes toast-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+@keyframes toast-out { from { opacity:1; } to { opacity:0; } }
+
+.message-item.is-new { animation:message-in var(--motion-base) var(--ease) both; }
+.typing-indicator { min-height:24px; display:inline-flex; align-items:center; gap:4px; }
+.typing-indicator i { width:5px; height:5px; border-radius:50%; background:currentColor; animation:dot-pulse 1.2s ease-in-out infinite; }
+.typing-indicator i:nth-child(2) { animation-delay:150ms; }
+.typing-indicator i:nth-child(3) { animation-delay:300ms; }
+.level-chip.chip-updated { animation:chip-updated 700ms var(--ease) both; background-color:var(--accent); }
+.toast { animation:toast-in var(--motion-base) var(--ease) both; }
+.toast.is-leaving { animation:toast-out 150ms ease both; }
+.toast:hover { animation-play-state:paused; }
+.toast, .toast button, .icon-button, .help-button, .send-button,
+.new-chat-button, .conversation-row, .suggestion-card, .conversation-menu,
+.row-menu button, .user-card, .archive-link {
+  transition:background-color var(--motion-fast) var(--ease),
+    border-color var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
+}
+.send-button:active { transform:scale(.96); }
+.retry-button { margin-top:8px; padding:4px 10px; border:1px solid currentColor; border-radius:6px; background:transparent; color:inherit; cursor:pointer; }
+.command-menu, .row-menu, .user-popover, .settings-modal, .help-modal {
+  transform-origin:center bottom;
+  animation:overlay-in 150ms var(--ease) both;
+}
+.modal-backdrop { animation:backdrop-in 150ms var(--ease) both; }
+.app-sidebar { transition:none; }
+.mobile-scrim { animation:backdrop-in 200ms var(--ease) both; }
+
+@media (max-width:767px) {
+  .app-sidebar { transition:transform 200ms var(--ease); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}

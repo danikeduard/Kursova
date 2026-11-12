@@ -1,0 +1,23 @@
+<aside class="app-sidebar" id="sidebar" aria-label="Conversation sidebar">
+  <div class="sidebar-head">
+    <a class="app-logo" href="{{ url_for('main.chat') }}" aria-label="LinguaPath chat"><span class="logo-mark">L</span><span class="logo-name">LinguaPath</span></a>
+    <button class="icon-button" id="sidebar-toggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
+  </div>
+  {% if sidebar_mode == "chat" %}
+    <button class="new-chat-button" id="new-chat" type="button"><span>＋</span> New chat</button>
+  {% else %}
+    <a class="new-chat-button" href="{{ url_for('main.chat') }}"><span>＋</span> New chat</a>
+  {% endif %}
+  <label class="search-box" for="conversation-search"><span aria-hidden="true">⌕</span><input id="conversation-search" type="search" placeholder="Search chats" autocomplete="off"><kbd>⌘K</kbd></label>
+  <div class="conversation-scroll" id="conversation-list" aria-live="polite"></div>
+  <button class="archive-link" id="archive-toggle" type="button">Archived <span>›</span></button>
+  <div class="sidebar-user">
+    <button class="user-card" id="user-menu" type="button" aria-haspopup="menu" aria-expanded="false"><span class="avatar" id="user-avatar">{{ preferred_name[0]|upper }}</span><span class="user-meta"><strong id="user-display-name">{{ preferred_name }}</strong></span><span class="more-dots">•••</span></button>
+    <div class="user-popover" id="user-popover" hidden>
+      <a href="{{ url_for('main.progress') }}">Progress</a>
+      {% if sidebar_mode == "chat" %}<button type="button" id="settings-open">Settings</button>{% else %}<a href="{{ url_for('main.chat') }}?settings=1">Settings</a>{% endif %}
+      {% if current_user.is_admin %}<a href="{{ url_for('main.admin_export') }}">Admin export</a>{% endif %}
+      <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Log out</button></form>
+    </div>
+  </div>
+</aside>

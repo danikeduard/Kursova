@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Log in — LinguaPath{% endblock %}
+{% block content %}
+<section class="card narrow"><h1>{{ t("auth.login_title") }}</h1>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>{{ t("auth.email") }} <input type="email" name="email" required autocomplete="email"></label>
+  <label>{{ t("auth.password") }} <input type="password" name="password" required autocomplete="current-password"></label>
+  <button class="button" type="submit">{{ t("auth.login") }}</button>
+</form></section>
+{% endblock %}
