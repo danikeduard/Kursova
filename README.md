@@ -95,6 +95,10 @@ Apply migrations:
 flask --app wsgi db upgrade
 ```
 
+The latest migration automatically creates the documented demo accounts:
+`admin` / `admin` and `user` / `user`. Existing accounts with either login are
+left in place; the `admin` account is ensured to have Administrator access.
+
 For PostgreSQL, set `DATABASE_URL` to a PostgreSQL connection URL.
 
 Account deletion removes the user's conversations, ratings, Feedback, Bug
