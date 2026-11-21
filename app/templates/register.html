@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Create account — LinguaPath{% endblock %}
+{% block content %}
+<section class="card register-card"><span class="eyebrow register-eyebrow">LinguaPath</span><h1>{{ t("auth.register_title") }}</h1>
+<p>{{ t("auth.register_description") }}</p>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>{{ t("auth.email") }} <input type="email" name="email" required autocomplete="email"></label>
+  <label>{{ t("auth.password") }} <input type="password" name="password" minlength="8" required autocomplete="new-password"></label>
+  <fieldset class="level-fieldset">
+  <legend>English level</legend>
+  <div class="level-grid">
+  {% for level in levels %}
+    <label class="level-card"><input type="radio" name="level" value="{{ level }}" required><strong>{{ level }}</strong></label>
+  {% endfor %}
+  </div>
+  </fieldset>
+  <button class="button" type="submit">{{ t("auth.create") }}</button>
+</form></section>
+{% endblock %}

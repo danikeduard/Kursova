@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" class="chat-page" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>LinguaPath Tutor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
+</head>
+<body class="app-body" data-conversation-id="{{ conversation_id or '' }}">
+  <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+  {% include "_sidebar.html" %}
+  <main class="app-main">
+    <header class="topbar"><button class="icon-button mobile-menu" id="mobile-menu" type="button" aria-label="Open menu">☰</button><div class="conversation-title" id="conversation-title" role="button" tabindex="0" title="Click to rename this chat" {% if not conversation_id %}hidden{% endif %}><span class="conversation-title-text">New chat</span><span class="conversation-title-chevron" aria-hidden="true">⌄</span></div><div class="topbar-levels"><a class="progress-link" href="{{ url_for('main.progress') }}">Progress <span>↗</span></a></div></header>
+    <section class="chat-stage">
+      <div class="message-column">
+        <div class="message-area">
+          <div class="empty-state" id="empty-state"><div class="welcome-orb">✦</div><h1>What will you practice today?</h1><p>Write naturally and your tutor will adapt to your English level.</p><div class="suggestion-grid" id="suggestions"></div></div>
+          <div class="messages" id="messages" aria-live="polite"></div><button class="scroll-bottom" id="scroll-bottom" type="button" hidden>↓ New messages</button>
+        </div>
+        <div class="composer-wrap"><div class="command-menu" id="command-menu" hidden><strong>/analysis</strong><span>See your learning analysis</span></div><form class="composer" id="chat-form"><textarea id="chat-input" maxlength="{{ max_message_chars }}" rows="1" autocomplete="off" placeholder="Message your tutor..." aria-label="Message your tutor"></textarea><div class="composer-foot"><span id="char-count">0 / {{ max_message_chars }}</span><button class="send-button" type="submit" aria-label="Send message">↑</button></div></form></div>
+      </div>
+    </section>
+  </main>
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <section class="settings-modal" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" hidden>
+      <div class="modal-head"><h2 id="settings-heading">Settings</h2><button class="icon-button modal-close" type="button" aria-label="Close settings">×</button></div>
+      <div class="settings-tabs"><button class="active" data-tab="general">General</button></div>
+      <div class="settings-panel" data-panel="general">
+        <label>What should I call you?<input id="preferred-name" type="text" maxlength="40" autocomplete="given-name" placeholder="Your name"></label>
+        <label>Theme<select id="theme-select"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select></label>
+        <p class="settings-note">Your preference is saved to your account.</p>
+        <h3 class="settings-section-title">Tutor preferences</h3>
+        <label>Reply length<select id="reply-length"><option value="balanced">Balanced</option><option value="concise">Concise</option><option value="detailed">Detailed</option></select></label>
+        <label class="check-row"><input id="emoji-toggle" type="checkbox" checked> Use occasional emojis</label>
+        <h3 class="settings-section-title">Account</h3>
+        <div class="settings-account-actions">
+          <a class="settings-action" href="{{ url_for('main.feedback') }}">Send feedback</a>
+          <form method="post" action="{{ url_for('main.delete_account') }}" onsubmit="return window.confirm('Delete your account and all stored data?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="settings-action settings-action-danger" type="submit">Delete account</button></form>
+        </div>
+      </div>
+    </section>
+    <section class="help-modal level-change-modal" id="level-change-modal" role="dialog" aria-modal="true" aria-labelledby="level-change-heading" aria-describedby="level-change-summary level-change-caveat" hidden>
+      <button class="level-change-close modal-close" type="button" aria-label="Close level update">&times;</button>
+      <header class="level-change-header">
+        <span class="level-change-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5h16M7 16v-4m5 4V6m5 10V9"/></svg></span>
+        <div class="level-change-title-copy"><p class="level-change-kicker">Level update</p><h2 id="level-change-heading"></h2></div>
+        <span class="level-change-badge" id="level-change-badge"></span>
+      </header>
+      <p class="level-change-summary" id="level-change-summary"></p>
+      <ul class="level-change-reasons" id="level-change-reasons"></ul>
+      <p class="level-change-caveat" id="level-change-caveat"></p>
+    </section>
+  </div>
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  {% include "_bug_report.html" %}
+  <script type="module" src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

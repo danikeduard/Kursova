@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}LinguaPath — Adaptive English tutoring{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">{{ t("home.eyebrow") }}</p>
+    <h1>{{ t("home.title") }}</h1>
+    <p>{{ t("home.description") }}</p>
+    <a class="button" href="{{ url_for('auth.register') }}">{{ t("home.cta") }}</a>
+</section>
+{% endblock %}

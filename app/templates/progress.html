@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="{{ ui_language }}" class="chat-page" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Progress — LinguaPath</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
+</head>
+<body class="app-body progress-body">
+  <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+  {% include "_sidebar.html" %}
+  <main class="app-main">
+    <header class="topbar">
+      <button class="icon-button mobile-menu" id="mobile-menu" type="button" aria-label="Open menu">☰</button>
+      <strong>Progress</strong>
+      <div class="topbar-levels"><a class="progress-link" href="{{ url_for('main.chat') }}">Back to chat <span>↗</span></a></div>
+    </header>
+    <section class="progress-stage">
+      <div class="progress-content">
+        <div class="progress-toolbar">
+          <div><p class="eyebrow">Learning dashboard</p><h1>Your progress</h1></div>
+          <div class="range-control" role="group" aria-label="Chart range">
+            <button type="button" data-range="all">All</button>
+            <button type="button" data-range="30d">Last 30 days</button>
+            <button type="button" data-range="7d" class="active">Last 7 days</button>
+          </div>
+        </div>
+        <div id="progress-error" class="progress-error" hidden></div>
+        <section id="summary" class="progress-summary skeleton-block" aria-live="polite"></section>
+        <section id="charts" class="progress-chart-grid" aria-live="polite"></section>
+        <section class="progress-lower-grid">
+          <article class="progress-panel"><h2>Level changes</h2><div id="level-changes"></div></article>
+          <article class="progress-panel"><h2>Topics to revisit</h2><div id="weak-topics"></div></article>
+        </section>
+      </div>
+    </section>
+  </main>
+  <div class="progress-modal-backdrop" id="progress-modal" hidden>
+    <section class="progress-modal level-change-modal" role="dialog" aria-modal="true" aria-labelledby="progress-modal-title" aria-describedby="progress-modal-summary progress-modal-caveat">
+      <button type="button" class="level-change-close" id="progress-modal-close" aria-label="Close level update">&times;</button>
+      <header class="level-change-header">
+        <span class="level-change-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5h16M7 16v-4m5 4V6m5 10V9"/></svg></span>
+        <div class="level-change-title-copy"><p class="level-change-kicker">Level update</p><h2 id="progress-modal-title"></h2></div>
+        <span class="level-change-badge" id="progress-modal-badge"></span>
+      </header>
+      <p class="level-change-summary" id="progress-modal-summary"></p>
+      <ul class="level-change-reasons" id="progress-modal-reasons"></ul>
+      <p class="level-change-caveat" id="progress-modal-caveat"></p>
+    </section>
+  </div>
+  {% include "_bug_report.html" %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+  <script type="module" src="{{ url_for('static', filename='js/progress.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="{{ ui_language }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}LinguaPath{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('main.chat') if current_user.is_authenticated else url_for('main.index') }}">LinguaPath</a>
+    <nav>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.chat') }}">{{ t("nav.tutor") }}</a>
+        <a href="{{ url_for('main.progress') }}">{{ t("nav.progress") }}</a>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit">{{ t("nav.logout") }}</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">{{ t("nav.login") }}</a>
+        <a class="button" href="{{ url_for('auth.register') }}">{{ t("nav.get_started") }}</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  {% include "_bug_report.html" %}
+</body>
+</html>

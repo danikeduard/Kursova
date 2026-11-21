@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en" class="chat-page" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Feedback (admin) — LinguaPath</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
+</head>
+<body class="app-body feedback-body admin-feedback-body">
+  <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+  {% include "_sidebar.html" %}
+  <main class="app-main">
+    <header class="topbar">
+      <button class="icon-button mobile-menu" id="mobile-menu" type="button" aria-label="Open menu">☰</button>
+      <strong>Feedback (admin)</strong>
+      <div class="topbar-levels"><a class="progress-link" href="{{ url_for('main.chat') }}">Back to chat <span>↗</span></a></div>
+    </header>
+    <section class="feedback-stage">
+      <div class="feedback-admin-content">
+        <nav class="admin-tab-switcher" aria-label="Admin sections"><a href="{{ url_for('main.admin_feedback') }}" class="active">Feedback <span>{{ response_count }}</span></a><a href="{{ url_for('main.admin_bug_reports_page') }}">Bug reports <span>{{ bug_new_count }}</span></a></nav>
+        <section class="feedback-summary" aria-label="Feedback summary">
+          <article><small>Responses</small><strong>{{ response_count }}</strong></article>
+          <article><small>Unread</small><strong>{{ unread_count }}</strong></article>
+          <article><small>Overall mean</small><strong>{{ overall_mean if overall_mean is not none else "—" }}{% if overall_mean is not none %} / 5{% endif %}</strong></article>
+        </section>
+        {% if small_sample %}
+          <p class="feedback-warning" role="note">Small sample: results are not conclusive</p>
+        {% endif %}
+
+        <section class="feedback-chart-grid" aria-label="Question charts">
+          <article class="feedback-chart-card"><h2>Mean score by question</h2><canvas id="feedback-means" role="img" aria-label="Mean score for each question"></canvas></article>
+          <article class="feedback-chart-card"><h2>Answer distribution</h2><canvas id="feedback-distribution" role="img" aria-label="Distribution of answers by question"></canvas></article>
+        </section>
+
+        <section class="feedback-table-card">
+          <div class="feedback-table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Participant</th><th>Email</th><th>Scores</th><th>Level</th><th>Context</th><th>Comment</th><th>Consent</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for row in response_rows %}
+                  <tr>
+                    <td>{{ row.record.ts.strftime("%Y-%m-%d") }}</td>
+                    <td><code>{{ row.participant_id }}</code></td>
+                    <td>{% if row.email %}{{ row.email }}{% else %}—{% endif %}</td>
+                    <td>
+                      {% if row.legacy %}<span class="legacy-label">legacy 10-item response</span>{% else %}
+                        {% for key, statement in questions %}<span title="{{ statement }}">Q{{ loop.index }}: {{ row.scores[loop.index0] if row.scores[loop.index0] is not none else "—" }}</span>{% endfor %}
+                      {% endif %}
+                    </td>
+                    <td>{{ row.self_level }} → {{ row.estimated_level }}</td>
+                    <td>{% if row.rated_units is not none %}{{ row.rated_units }} rated units · {{ row.days_active }} active days{% else %}—{% endif %}</td>
+                    <td class="feedback-comment-cell">{{ row.record.free_text or "" }}</td>
+                    <td>{{ "Yes" if row.record.consent_research else "No" }}</td>
+                    <td>
+                      {% if row.record.revision > 1 %}<small>edited {{ row.record.revision - 1 }} times</small>{% endif %}
+                      <form method="post" action="{{ url_for('main.admin_feedback_status', feedback_id=row.record.id) }}" class="feedback-status-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="page" value="{{ page }}">
+                        <label class="sr-only" for="status-{{ row.record.id }}">Status</label>
+                        <select id="status-{{ row.record.id }}" name="admin_status">
+                          {% for status in ('new','read','archived') %}<option value="{{ status }}" {% if row.record.admin_status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}
+                        </select>
+                        <button type="submit">Save</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="9" class="muted">No feedback responses yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if total_pages > 1 %}
+            <nav class="feedback-pagination" aria-label="Feedback pagination">
+              {% if page > 1 %}<a href="{{ url_for('main.admin_feedback', page=page-1) }}">Previous</a>{% endif %}
+              <span>Page {{ page }} of {{ total_pages }}</span>
+              {% if page < total_pages %}<a href="{{ url_for('main.admin_feedback', page=page+1) }}">Next</a>{% endif %}
+            </nav>
+          {% endif %}
+        </section>
+      </div>
+    </section>
+  </main>
+  <script>
+    window.feedbackQuestionStats = {{ question_stats|tojson }};
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+  <script type="module" src="{{ url_for('static', filename='js/admin_feedback.js') }}"></script>
+</body>
+</html>

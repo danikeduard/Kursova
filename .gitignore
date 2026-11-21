@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+instance/
+linguapath.db
+*.db
+*.db-wal
+*.db-shm
+backups/
+.coverage
+.neon
+node_modules/

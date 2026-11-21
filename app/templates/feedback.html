@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" class="chat-page" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Feedback — LinguaPath</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
+</head>
+<body class="app-body feedback-body">
+  <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+  {% include "_sidebar.html" %}
+  <main class="app-main">
+    <header class="topbar">
+      <button class="icon-button mobile-menu" id="mobile-menu" type="button" aria-label="Open menu">☰</button>
+      <strong>Feedback</strong>
+      <div class="topbar-levels"><a class="progress-link" href="{{ url_for('main.chat') }}">Back to chat <span>↗</span></a></div>
+    </header>
+    <section class="feedback-stage">
+      <div class="feedback-card">
+        {% if submitted %}
+          <section class="feedback-success" role="status" aria-live="polite">
+            <h1>Thank you!</h1>
+            <p>{{ "Your answers were updated." if feedback_updated else "Your answers have been saved." }}</p>
+            <a class="feedback-primary" href="{{ url_for('main.chat') }}">Back to the chat</a>
+          </section>
+        {% else %}
+          <header class="feedback-intro">
+            <p class="eyebrow">Feedback</p>
+            <h1>Five quick questions. Takes about a minute.</h1>
+            {% if already_submitted %}
+              <p class="feedback-notice" role="status" id="feedback-unsaved-hint" hidden>You have unsaved changes</p>
+              <p class="feedback-notice" role="status">You already submitted. Sending again will replace your previous answers. <a href="#" id="feedback-discard" hidden>Discard</a></p>
+            {% elif legacy_submission %}
+              <p class="feedback-notice" role="status">You have a previous 10-item response. Submit this five-question form to replace it.</p>
+            {% endif %}
+          </header>
+
+          <form id="feedback-form" method="post" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="feedback-progress" aria-live="polite">
+              <strong id="feedback-progress-text">{{ feedback_answers|length if feedback_answers else 0 }} / 5 answered</strong>
+              <span class="feedback-progress-track" aria-hidden="true"><span id="feedback-progress-bar"></span></span>
+            </div>
+
+            {% for key, statement in feedback_questions %}
+              <fieldset class="feedback-question{% if feedback_errors.get(key) %} has-error{% endif %}" id="question-{{ key }}" data-question="{{ key }}">
+                <legend>{{ statement }}</legend>
+                <div class="feedback-scale" role="radiogroup" aria-label="{{ statement }}">
+                  {% for value in range(1, 6) %}
+                    <label class="feedback-score" title="{{ value }}">
+                      <input type="radio" name="{{ key }}" value="{{ value }}" required {% if feedback_answers.get(key) == value %}checked{% endif %}>
+                      <span>{{ value }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+                <div class="feedback-scale-labels" aria-hidden="true"><span>Strongly disagree</span><span>Strongly agree</span></div>
+                <p class="feedback-field-error" id="error-{{ key }}" {% if not feedback_errors.get(key) %}hidden{% endif %}>{{ feedback_errors.get(key, "Choose a score from 1 to 5.") }}</p>
+              </fieldset>
+            {% endfor %}
+
+            <div class="feedback-comments">
+              <label for="free-text">Comments (optional)</label>
+              <textarea id="free-text" name="free_text" maxlength="1000" placeholder="What did you like? What should be improved?">{{ feedback_comment or "" }}</textarea>
+              <div class="feedback-comment-meta"><span id="feedback-comment-error" class="feedback-field-error" {% if not feedback_errors.get('free_text') %}hidden{% endif %}>{{ feedback_errors.get('free_text', '') }}</span><span id="feedback-character-count">0 / 1000</span></div>
+            </div>
+
+            <label class="feedback-consent">
+              <input type="checkbox" name="consent_research" value="yes" {% if consent_research %}checked{% endif %}>
+              <span>I allow my anonymized answers to be used in the coursework research.</span>
+            </label>
+            <p class="feedback-privacy">No name or email is collected in the answers. <a href="{{ url_for('main.privacy') }}">Privacy details</a></p>
+            <p class="feedback-privacy">The administrator can see your account email.</p>
+
+            <p class="feedback-submit-error" id="feedback-submit-error" role="alert" hidden>Please answer all five questions.</p>
+            <button class="feedback-primary" id="feedback-submit" type="submit" disabled>{{ "Update my answers" if already_submitted else "Submit feedback" }}</button>
+          </form>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+  {% include "_bug_report.html" %}
+  <script>window.feedbackDraftKey = {{ feedback_draft_key|tojson }};</script>
+  <script type="module" src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{% if current_user.is_authenticated %}
+<script>window.bugDraftUserId = {{ current_user.id|tojson }};</script>
+<button id="bug-report-button" class="bug-report-button" type="button" aria-label="Report a bug" title="Report a bug">
+  <img src="{{ url_for('static', filename='bug.svg') }}" alt="" aria-hidden="true">
+</button>
+<div class="bug-report-backdrop" id="bug-report-backdrop" hidden>
+  <section class="bug-report-panel" id="bug-report-panel" role="dialog" aria-modal="true" aria-labelledby="bug-report-heading" tabindex="-1">
+    <header><div class="bug-report-heading-row"><h2 id="bug-report-heading">Report a bug</h2><span class="daihleky-easter" title="Daihleky">for Daihleky</span></div><button type="button" id="bug-report-close" aria-label="Close report">×</button></header>
+    <form id="bug-report-form" novalidate>
+      <label for="bug-category">Category</label>
+      <select id="bug-category" name="category">
+        <option>Something is broken</option><option>Wrong level or rating</option><option>Confusing or hard to use</option><option>Idea or suggestion</option><option>Other</option>
+      </select>
+      <label for="bug-title">Title <span>(optional)</span></label>
+      <input id="bug-title" name="title" type="text" maxlength="120" autocomplete="off" placeholder="iPhone model, Samsung model, MacBook Pro...">
+      <p id="bug-easter-line" class="bug-easter-line" hidden></p>
+      <label for="bug-description">Description</label>
+      <textarea id="bug-description" name="description" minlength="10" maxlength="2000" required placeholder="Describe what happened, what you expected, and what went wrong..."></textarea>
+      <div class="bug-description-meta"><span id="bug-description-error" class="bug-error" hidden></span><span id="bug-description-count">0 / 2000</span></div>
+      <label class="bug-check"><input id="bug-include-details" type="checkbox" checked> <span>Include technical details</span></label>
+      <details><summary>What is sent?</summary><ul><li>Page path (without query string)</li><li>Browser name and version</li><li>Screen and viewport size</li><li>Theme and app version</li><li>Timestamp</li><li>A conversation ID number only on a specific chat</li></ul></details>
+      <p class="bug-note">The administrator can see your account email with this report.</p>
+      <p id="bug-form-error" class="bug-error" role="alert" hidden></p>
+      <button id="bug-submit" class="bug-submit" type="submit">Submit report</button>
+    </form>
+    <section id="bug-report-success" class="bug-report-success" role="status" hidden><p id="bug-success-message"></p><button type="button" id="bug-success-close">Close</button></section>
+  </section>
+</div>
+<script type="module" src="{{ url_for('static', filename='js/bug-report.js') }}"></script>
+{% endif %}
