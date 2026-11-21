@@ -8,6 +8,7 @@ from app.models import (
     User,
     UserSettings,
 )
+from werkzeug.security import check_password_hash
 
 
 def test_register_initializes_account_and_ratings(client, app):
@@ -86,6 +87,29 @@ def test_registration_does_not_grant_admin_and_cli_can_promote(client, app):
     with app.app_context():
         user = db.session.scalar(db.select(User).filter_by(email="admin@example.com"))
         assert user.is_admin is True
+
+
+def test_demo_users_are_seeded_with_ratings(app):
+    from scripts.init_app_db import seed_demo_users
+
+    with app.app_context():
+        db.create_all()
+        seed_demo_users()
+
+        admin = db.session.scalar(db.select(User).filter_by(email="admin"))
+        standard_user = db.session.scalar(db.select(User).filter_by(email="user"))
+        assert admin is not None
+        assert admin.is_admin is True
+        assert standard_user is not None
+        assert standard_user.is_admin is False
+        assert check_password_hash(admin.password_hash, "admin")
+        assert check_password_hash(standard_user.password_hash, "user")
+        for user in (admin, standard_user):
+            ratings = db.session.scalars(db.select(SkillRating).filter_by(user_id=user.id)).all()
+            assert {rating.skill for rating in ratings} == {"grammar", "vocab", "writing"}
+
+        seed_demo_users()
+        assert db.session.scalar(db.select(db.func.count()).select_from(User)) == 2
 
 
 def test_public_response_includes_security_headers(client):

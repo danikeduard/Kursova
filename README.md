@@ -23,7 +23,7 @@ Windows with PowerShell:
 py -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-flask --app wsgi db upgrade
+python scripts/init_app_db.py
 flask --app wsgi run
 ```
 
