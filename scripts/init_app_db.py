@@ -1,10 +1,13 @@
 """Apply the checked-in Alembic schema to the configured database."""
 
 import sys
+import os
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from dotenv import load_dotenv
 from flask_migrate import upgrade
 
 from app import create_app
@@ -43,6 +46,20 @@ def seed_demo_users() -> None:
 
 
 def main() -> None:
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
+    database_url = os.environ.get("DATABASE_URL", "")
+    migration_url = os.environ.get("DATABASE_URL_UNPOOLED") or os.environ.get("MIGRATION_DATABASE_URL")
+
+    if not migration_url and database_url:
+        parsed = urlsplit(database_url)
+        if parsed.scheme in {"postgresql", "postgres"} and parsed.hostname:
+            direct_netloc = parsed.netloc.replace("-pooler.", ".", 1)
+            if direct_netloc != parsed.netloc:
+                migration_url = urlunsplit(parsed._replace(netloc=direct_netloc))
+
+    if migration_url:
+        os.environ["MIGRATION_DATABASE_URL"] = migration_url
+
     app = create_app()
     with app.app_context():
         upgrade()

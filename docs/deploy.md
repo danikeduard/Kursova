@@ -1,7 +1,9 @@
 # Deployment
 
-1. Create a Supabase or Neon PostgreSQL database and copy its pooled
-   `DATABASE_URL` connection string, including `sslmode=require`.
+1. Create a Supabase or Neon PostgreSQL database. Set `DATABASE_URL` to the
+   pooled application connection string and, for Neon migrations, set
+   `DATABASE_URL_UNPOOLED` to the direct connection string. Both should include
+   `sslmode=require` and PostgreSQL credentials must remain secret.
 2. Set `APP_ENV=production`, a random `SECRET_KEY` with at least 32 characters,
    `DATABASE_URL`, provider credentials, `LLM_MODEL`, `DAILY_MESSAGE_CAP`,
    `RATE_LIMIT_CHAT`, and a shared Redis `RATELIMIT_STORAGE_URI` in Render/Fly.io.

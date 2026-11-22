@@ -1,4 +1,4 @@
-"""Compatibility wrapper for initializing the application's schema with Alembic."""
+"""Initialize the configured Neon/PostgreSQL database with Alembic."""
 
 import sys
 from pathlib import Path
