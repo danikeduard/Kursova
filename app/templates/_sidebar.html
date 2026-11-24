@@ -14,6 +14,9 @@
     <span class="archive-link-label"><span class="archive-link-icon" aria-hidden="true">▣</span><span>Archived</span></span>
     <span class="archive-link-chevron" aria-hidden="true">›</span>
   </button>
+  <a class="archive-link sidebar-feedback-link{% if sidebar_mode == 'feedback' or sidebar_mode == 'admin-feedback' %} active{% endif %}" href="{{ url_for('main.feedback') }}" aria-label="Feedback" title="Feedback">
+    <span class="archive-link-label"><span class="archive-link-icon" aria-hidden="true">✉</span><span>Feedback</span></span>
+  </a>
   <div class="sidebar-user">
     <button class="user-card" id="user-menu" type="button" aria-haspopup="menu" aria-expanded="false"><span class="avatar" id="user-avatar">{{ preferred_name[0]|upper }}</span><span class="user-meta"><strong id="user-display-name">{{ preferred_name }}</strong></span><span class="more-dots">•••</span></button>
     <div class="user-popover" id="user-popover" hidden>

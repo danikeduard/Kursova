@@ -143,7 +143,6 @@ if (button && backdrop && panel && form) {
       browser: navigator.userAgent.slice(0, 300),
       screen: `${window.screen.width}x${window.screen.height}`,
       viewport: `${window.innerWidth}x${window.innerHeight}`,
-      theme: document.documentElement.dataset.theme || "dark",
       app_version: "web",
       timestamp: new Date().toISOString(),
       ...(window.location.pathname.match(/^\/chat\/(\d+)$/) ? { conversation_id: Number(window.location.pathname.match(/^\/chat\/(\d+)$/)[1]) } : {}),

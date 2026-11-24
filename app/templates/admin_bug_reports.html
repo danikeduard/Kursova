@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" class="chat-page" data-theme="dark">
+<html lang="en" class="chat-page">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>Admin — LinguaPath</title>
+  <title>Bug reports — LinguaPath</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
 </head>
@@ -11,7 +11,7 @@
   <div class="mobile-scrim" id="mobile-scrim" hidden></div>
   {% include "_sidebar.html" %}
   <main class="app-main">
-    <header class="topbar"><button class="icon-button mobile-menu" id="mobile-menu" type="button" aria-label="Open menu">☰</button><strong>Admin</strong><div class="topbar-levels"><a class="progress-link" href="{{ url_for('main.chat') }}">Back to chat <span>↗</span></a></div></header>
+    <header class="topbar"><button class="icon-button mobile-menu" id="mobile-menu" type="button" aria-label="Open menu">☰</button><strong>Bug reports</strong><div class="topbar-levels"><a class="progress-link" href="{{ url_for('main.chat') }}">Back to chat <span>↗</span></a></div></header>
     <section class="feedback-stage">
       <div class="feedback-admin-content">
         <nav class="admin-tab-switcher" aria-label="Admin sections"><a href="{{ url_for('main.admin_feedback') }}">Feedback</a><a href="{{ url_for('main.admin_bug_reports_page') }}" class="active">Bug reports</a></nav>

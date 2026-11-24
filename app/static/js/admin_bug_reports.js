@@ -1,4 +1,3 @@
-import "./theme.js";
 import { api } from "./api.js";
 import { setupSidebarChrome, setupSidebar } from "./sidebar.js";
 
@@ -81,7 +80,7 @@ async function openDetail(id) {
     ["Category", item.category], ["Title", item.title || "—"], ["Description", item.description],
     ["Page path", item.context?.page_path || "—"], ["Browser", item.context?.browser || "—"],
     ["Viewport", item.context?.viewport || "—"], ["Screen", item.context?.screen || "—"],
-    ["Theme", item.context?.theme || "—"], ["App version", item.context?.app_version || "—"],
+    ["App version", item.context?.app_version || "—"],
   ];
   entries.forEach(([key, value]) => { const row = document.createElement("div"); const strong = document.createElement("strong"); strong.textContent = key; const span = document.createElement("span"); span.textContent = value; row.append(strong, span); detailContent.append(row); });
   document.querySelector("#bug-detail-status").value = item.status;

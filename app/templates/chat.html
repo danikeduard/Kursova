@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="chat-page" data-theme="dark">
+<html lang="en" class="chat-page">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +19,7 @@
           <div class="empty-state" id="empty-state"><div class="welcome-orb">✦</div><h1>What will you practice today?</h1><p>Write naturally and your tutor will adapt to your English level.</p><div class="suggestion-grid" id="suggestions"></div></div>
           <div class="messages" id="messages" aria-live="polite"></div><button class="scroll-bottom" id="scroll-bottom" type="button" hidden>↓ New messages</button>
         </div>
-        <div class="composer-wrap"><div class="command-menu" id="command-menu" hidden><strong>/analysis</strong><span>See your learning analysis</span></div><form class="composer" id="chat-form"><textarea id="chat-input" maxlength="{{ max_message_chars }}" rows="1" autocomplete="off" placeholder="Message your tutor..." aria-label="Message your tutor"></textarea><div class="composer-foot"><span id="char-count">0 / {{ max_message_chars }}</span><button class="send-button" type="submit" aria-label="Send message">↑</button></div></form></div>
+        <div class="composer-wrap"><div class="command-menu" id="command-menu" hidden><strong>/analysis</strong><span>See your learning analysis</span></div><form class="composer" id="chat-form"><textarea id="chat-input" maxlength="{{ max_message_chars }}" rows="1" autocomplete="off" placeholder="Message your tutor..." aria-label="Message your tutor"></textarea><div class="composer-foot"><span id="char-count">0 / {{ max_message_chars }}</span><button class="send-button" type="submit" aria-label="Send message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div></form></div>
       </div>
     </section>
   </main>
@@ -29,14 +29,12 @@
       <div class="settings-tabs"><button class="active" data-tab="general">General</button></div>
       <div class="settings-panel" data-panel="general">
         <label>What should I call you?<input id="preferred-name" type="text" maxlength="40" autocomplete="given-name" placeholder="Your name"></label>
-        <label>Theme<select id="theme-select"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select></label>
-        <p class="settings-note">Your preference is saved to your account.</p>
+        <p class="settings-note">Your preferences are saved to your account.</p>
         <h3 class="settings-section-title">Tutor preferences</h3>
         <label>Reply length<select id="reply-length"><option value="balanced">Balanced</option><option value="concise">Concise</option><option value="detailed">Detailed</option></select></label>
         <label class="check-row"><input id="emoji-toggle" type="checkbox" checked> Use occasional emojis</label>
         <h3 class="settings-section-title">Account</h3>
         <div class="settings-account-actions">
-          <a class="settings-action" href="{{ url_for('main.feedback') }}">Send feedback</a>
           <form method="post" action="{{ url_for('main.delete_account') }}" onsubmit="return window.confirm('Delete your account and all stored data?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="settings-action settings-action-danger" type="submit">Delete account</button></form>
         </div>
       </div>

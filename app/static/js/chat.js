@@ -1,7 +1,6 @@
 import { api, conversations, messageFeedback, settings } from "./api.js";
 import { setupSidebar, setupSidebarChrome } from "./sidebar.js";
 import { renderMarkdown } from "./markdown.js";
-import { setTheme } from "./theme.js";
 import { toast } from "./toast.js";
 import { setupShortcuts } from "./shortcuts.js";
 import { closeMenu, openMenu } from "./menu.js";
@@ -120,7 +119,11 @@ async function submitMessage(event, { skipAssessment = false } = {}) {
       submitMessage();
     });
     typing.body.append(document.createElement("br"), retry);
-  } finally { state.streaming = false; send.textContent = "↑"; send.classList.remove("stop"); }
+  } finally {
+    state.streaming = false;
+    send.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+    send.classList.remove("stop");
+  }
 }
 async function showLevelChange(id) {
   try {
@@ -194,30 +197,25 @@ updateCounter();
 document.querySelector("#new-chat").addEventListener("click", newChat);
 document.querySelector("#settings-open").addEventListener("click", () => { document.querySelector("#modal-backdrop").hidden = false; document.querySelector("#settings-modal").hidden = false; });
 document.querySelectorAll(".modal-close").forEach((button) => button.addEventListener("click", () => { document.querySelector("#modal-backdrop").hidden = true; document.querySelectorAll("[role=dialog]").forEach((dialog) => { dialog.hidden = true; }); }));
-document.querySelector("#theme-select").addEventListener("change", (event) => setTheme(event.target.value));
 async function loadSettings() {
   try {
     const value = await settings.get();
-    document.querySelector("#theme-select").value = value.theme;
     document.documentElement.lang = "en";
     document.querySelector("#reply-length").value = value.reply_length;
     document.querySelector("#emoji-toggle").checked = value.use_emojis;
     document.querySelector("#preferred-name").value = value.preferred_name || "";
     updatePreferredName(value.preferred_name);
-    setTheme(value.theme);
   } catch (error) { toast(error.message); }
 }
-["theme-select", "reply-length", "emoji-toggle", "preferred-name"].forEach((id) => {
+["reply-length", "emoji-toggle", "preferred-name"].forEach((id) => {
   document.querySelector(`#${id}`).addEventListener("change", async () => {
     try {
       await settings.update({
-        theme: document.querySelector("#theme-select").value,
         reply_length: document.querySelector("#reply-length").value,
         use_emojis: document.querySelector("#emoji-toggle").checked,
         preferred_name: document.querySelector("#preferred-name").value,
       });
       updatePreferredName(document.querySelector("#preferred-name").value);
-      if (id === "theme-select") setTheme(document.querySelector("#theme-select").value);
       toast("Settings saved");
     } catch (error) { toast(error.message); }
   });

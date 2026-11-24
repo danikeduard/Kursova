@@ -11,7 +11,7 @@ CEFR progress tracking, Feedback collection, and Bug Report review.
 - Administrator Feedback dashboard with summaries and charts.
 - Floating Bug Report dialog with technical details and local drafts.
 - Administrator Bug Report panel with filters, status changes, notes, and CSV export.
-- Dark, light, and system themes.
+- A consistent dark theme across the site.
 
 The selected LLM provider and model are server configuration only.
 
@@ -23,7 +23,7 @@ Windows with PowerShell:
 py -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python scripts/init_app_db.py
+flask --app wsgi db upgrade
 flask --app wsgi run
 ```
 
@@ -95,14 +95,7 @@ Apply migrations:
 flask --app wsgi db upgrade
 ```
 
-The latest migration automatically creates the documented demo accounts:
-`admin` / `admin` and `user` / `user`. Existing accounts with either login are
-left in place; the `admin` account is ensured to have Administrator access.
-
-For PostgreSQL, set `DATABASE_URL` to the pooled PostgreSQL connection URL.
-For Neon, also set `DATABASE_URL_UNPOOLED` to the direct URL for migrations.
-`python scripts/init_app_db.py` automatically uses the direct URL and initializes
-the schema for users, chats, ratings, feedback, and bug reports.
+For PostgreSQL, set `DATABASE_URL` to a PostgreSQL connection URL.
 
 Account deletion removes the user's conversations, ratings, Feedback, Bug
 Reports, and settings.

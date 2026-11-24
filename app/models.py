@@ -55,7 +55,6 @@ class UserSettings(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("app_user.id", ondelete="CASCADE"), primary_key=True)
     reply_length = db.Column(db.String(20), nullable=False, default="balanced")
     use_emojis = db.Column(db.Boolean, nullable=False, default=True)
-    theme = db.Column(db.String(10), nullable=False, default="dark")
     preferred_name = db.Column(db.String(40), nullable=False, default="")
     updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
 

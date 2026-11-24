@@ -13,14 +13,7 @@ DEFAULT_SQLITE_URI = f"sqlite:///{INSTANCE_DIR / 'linguapath.db'}"
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY")
-    # Keep DATABASE_URL as the application connection (preferably pooled on Neon).
-    # Migrations use DATABASE_URL_UNPOOLED or MIGRATION_DATABASE_URL when supplied.
-    database_url = (
-        os.environ.get("MIGRATION_DATABASE_URL")
-        or os.environ.get("DATABASE_URL")
-        or DEFAULT_SQLITE_URI
-    ).strip()
-    SQLALCHEMY_DATABASE_URI = database_url
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", DEFAULT_SQLITE_URI)
     if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql+psycopg2://", 1)
     elif SQLALCHEMY_DATABASE_URI.startswith("postgresql://"):

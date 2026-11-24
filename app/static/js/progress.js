@@ -1,4 +1,3 @@
-import "./theme.js";
 import { api } from "./api.js";
 import { setupSidebar, setupSidebarChrome } from "./sidebar.js";
 import { toast } from "./toast.js";
@@ -8,6 +7,15 @@ const colors = { grammar: "#55b7c8", vocab: "#8aa7ff", writing: "#e5a56b" };
 const charts = new Map();
 const state = { query: "", archived: false };
 const chartArea = document.querySelector("#charts");
+const chartTheme = getComputedStyle(document.documentElement);
+const chartColors = {
+  bandA: chartTheme.getPropertyValue("--chart-band-a").trim(),
+  bandB: chartTheme.getPropertyValue("--chart-band-b").trim(),
+  label: chartTheme.getPropertyValue("--chart-label").trim(),
+  gridX: chartTheme.getPropertyValue("--chart-grid-x").trim(),
+  gridY: chartTheme.getPropertyValue("--chart-grid-y").trim(),
+  muted: chartTheme.getPropertyValue("--chart-point-muted").trim(),
+};
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
 })[char]);
@@ -31,9 +39,9 @@ const bandPlugin = {
     for (let index = 0; index < 6; index += 1) {
       const top = scales.y.getPixelForValue(bounds[index + 1]);
       const bottom = scales.y.getPixelForValue(bounds[index]);
-      ctx.fillStyle = index % 2 ? "rgba(255,255,255,.025)" : "rgba(255,255,255,.055)";
+      ctx.fillStyle = index % 2 ? chartColors.bandA : chartColors.bandB;
       ctx.fillRect(area.left, top, area.right - area.left, bottom - top);
-      ctx.fillStyle = "rgba(155,155,155,.75)";
+      ctx.fillStyle = chartColors.label;
       ctx.font = "12px system-ui";
       ctx.textAlign = "right";
       ctx.fillText(["A1", "A2", "B1", "B2", "C1", "C2"][index], area.right + 42, (top + bottom) / 2 + 4);
@@ -84,7 +92,7 @@ function chartCard(skill, data) {
         borderWidth: 2,
         pointRadius: points.length <= 40 ? [4, ...points.map((point, index) => index === points.length - 1 ? 6 : point.label !== (points[index - 1]?.label || levelBand(data.start_rating)) ? 7 : 4)] : 0,
         pointBackgroundColor: [colors[skill], ...points.map((point, index) => index === points.length - 1 ? "#fff" : point.skipped ? "transparent" : colors[skill])],
-        pointBorderColor: [colors[skill], ...points.map((point) => point.skipped ? "#9b9b9b" : colors[skill])],
+        pointBorderColor: [colors[skill], ...points.map((point) => point.skipped ? chartColors.muted : colors[skill])],
         pointBorderWidth: [1, ...points.map((point) => point.skipped ? 2 : 1)],
       }],
     },
@@ -94,8 +102,8 @@ function chartCard(skill, data) {
       maintainAspectRatio: false,
       interaction: { intersect: false, mode: "nearest" },
       scales: {
-        x: { type: "linear", ticks: { precision: 0 }, grid: { color: "rgba(155,155,155,.1)" } },
-        y: { min: lowBand, max: highBand, grid: { color: "rgba(155,155,155,.12)" } },
+        x: { type: "linear", ticks: { precision: 0 }, grid: { color: chartColors.gridX } },
+        y: { min: lowBand, max: highBand, grid: { color: chartColors.gridY } },
       },
       plugins: {
         legend: { display: false },

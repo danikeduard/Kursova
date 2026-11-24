@@ -393,7 +393,6 @@ def get_settings():
     return jsonify(
         reply_length=settings.reply_length,
         use_emojis=settings.use_emojis,
-        theme=settings.theme,
         preferred_name=settings.preferred_name,
     )
 
@@ -437,7 +436,6 @@ def update_settings():
         db.session.add(settings)
     allowed = {
         "reply_length": {"concise", "balanced", "detailed"},
-        "theme": {"dark", "light", "system"},
     }
     for field, values in allowed.items():
         if field in payload:
@@ -456,7 +454,7 @@ def update_settings():
     db.session.commit()
     return jsonify(
         reply_length=settings.reply_length, use_emojis=settings.use_emojis,
-        theme=settings.theme, preferred_name=settings.preferred_name,
+        preferred_name=settings.preferred_name,
     )
 
 
@@ -959,7 +957,6 @@ def create_bug_report():
         "browser": 300,
         "screen": 100,
         "viewport": 100,
-        "theme": 20,
         "app_version": 40,
         "timestamp": 40,
     }

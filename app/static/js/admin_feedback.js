@@ -1,4 +1,3 @@
-import "./theme.js";
 import { setupSidebarChrome, setupSidebar } from "./sidebar.js";
 
 setupSidebarChrome();

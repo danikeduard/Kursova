@@ -4,8 +4,6 @@ from sqlalchemy import inspect
 from app import create_app
 from app.config import TestConfig
 from app.extensions import db
-from app.models import SkillRating, User
-from werkzeug.security import check_password_hash
 
 
 def test_server_configured_llm_migration_is_reversible():
@@ -41,24 +39,3 @@ def test_displayed_level_migration_is_reversible():
         assert "display_level" not in rating_columns
         assert "display_level" not in event_columns
         assert not {"learning_action", "target_skill", "target_topic"} & turn_columns
-
-
-def test_seed_demo_users_migration_creates_accounts():
-    app = create_app(TestConfig)
-    with app.app_context():
-        upgrade()
-
-        admin = db.session.scalar(db.select(User).filter_by(email="admin"))
-        standard_user = db.session.scalar(db.select(User).filter_by(email="user"))
-        assert admin is not None
-        assert admin.is_admin is True
-        assert check_password_hash(admin.password_hash, "admin")
-        assert standard_user is not None
-        assert standard_user.is_admin is False
-        assert check_password_hash(standard_user.password_hash, "user")
-
-        for user in (admin, standard_user):
-            ratings = db.session.scalars(
-                db.select(SkillRating).filter_by(user_id=user.id)
-            ).all()
-            assert {rating.skill for rating in ratings} == {"grammar", "vocab", "writing"}
